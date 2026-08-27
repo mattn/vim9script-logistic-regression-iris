@@ -1,40 +1,27 @@
 vim9script
-def Dot(x: list<float>, y: list<float>): float
-  var r = 0.0
-  for v in range(len(x))
-    r += x[v] * y[v]
-  endfor
-  return r
-enddef
-
-def Scale(x: list<float>, f: float): list<float>
-  return map(copy(x), (_, v) => v * f)
-enddef
-
-def Add(x: list<float>, y: list<float>): list<float>
-  return map(copy(x), (i, v) => v + y[i])
-enddef
-
 def Softmax(w: list<float>, x: list<float>): float
-  return 1.0 / (1.0 + exp(0.0 - Dot(w, x)))
+  var v = w[0] * x[0] + w[1] * x[1] + w[2] * x[2] + w[3] * x[3]
+  return 1.0 / (1.0 + exp(0.0 - v))
 enddef
 
 def LogisticRegression(X: list<list<float>>, y: list<float>, rate: float, ntrains: number): list<float>
-  var l = 0.0 + len(X[0])
-  var w = mapnew(repeat([[]], len(X[0])), (_, v) => (rand() / 4294967295.0 - 0.5) * l / 2)
+  var w0 = (rand() / 4294967295.0 - 0.5) * 2.0
+  var w1 = (rand() / 4294967295.0 - 0.5) * 2.0
+  var w2 = (rand() / 4294967295.0 - 0.5) * 2.0
+  var w3 = (rand() / 4294967295.0 - 0.5) * 2.0
   for n in range(ntrains)
     for i in range(len(X))
-      var x = X[i]
-      var pred = Softmax(x, w)
-      var perr = y[i] - pred
-      # the loop added dx once per feature; fold that factor into scale
-      var scale = rate * perr * pred * (1.0 - pred) * len(x)
-      for j in range(len(x))
-        w[j] += x[j] * scale
-      endfor
+      var [x0, x1, x2, x3] = X[i]
+      var v = w0 * x0 + w1 * x1 + w2 * x2 + w3 * x3
+      var pred = 1.0 / (1.0 + exp(0.0 - v))
+      var scale = rate * (y[i] - pred) * pred * (1.0 - pred) * 4.0
+      w0 += x0 * scale
+      w1 += x1 * scale
+      w2 += x2 * scale
+      w3 += x3 * scale
     endfor
   endfor
-  return w
+  return [w0, w1, w2, w3]
 enddef
 
 def MakeVocab(names: list<string>): dict<float>
