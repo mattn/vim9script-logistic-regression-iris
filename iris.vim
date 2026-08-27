@@ -27,10 +27,10 @@ def LogisticRegression(X: list<list<float>>, y: list<float>, rate: float, ntrain
       var x = X[i]
       var pred = Softmax(x, w)
       var perr = y[i] - pred
-      var scale = rate * perr * pred * (1.0 - pred)
-      var dx = Scale(copy(x), scale)
+      # the loop added dx once per feature; fold that factor into scale
+      var scale = rate * perr * pred * (1.0 - pred) * len(x)
       for j in range(len(x))
-        w = Add(w, dx)
+        w[j] += x[j] * scale
       endfor
     endfor
   endfor
@@ -72,7 +72,7 @@ def Token(line: string): list<any>
 enddef
 
 def Main()
-  var data: list<any> = mapnew(readfile('iris.csv'), (_, line) => Token(line))
+  var data: list<any> = mapnew(readfile('iris.csv')[1 :], (_, line) => Token(line))
   call Shuffle(data)
   var train = data[: len(data) / 2]
   var test = data[len(data) / 2 + 1 :]
